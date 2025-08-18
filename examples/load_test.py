@@ -47,24 +47,11 @@ for batch in dataloader:
     print(f"{batch[camera_key].shape=}")  # (32, 4, c, h, w)
     print(f"{batch['observation.state'].shape=}")  # (32, 6, c)
     print(f"{batch['action'].shape=}")  # (32, 64, c)
+    print("| KEY | TYPE | SHAPE |")
+    print("| --- | --- | --- |")
     for k, v in batch.items():
         if isinstance(v, list):
-            print(f"{k}: {len(v)} {v}")
+            print(f"| {k} | {len(v)} | str | {v} |")
         else:
-            print(f"{k}: {v.dtype} {v.shape}")
+            print(f"| {k} | {v.dtype} | {v.shape} |")
     import pdb; pdb.set_trace()
-
-'''
-observation.images.cam_high: torch.float32 torch.Size([1, 3, 480, 640])
-observation.images.cam_left_wrist: torch.float32 torch.Size([1, 3, 480, 640])
-observation.images.cam_right_wrist: torch.float32 torch.Size([1, 3, 480, 640])
-observation.state: torch.float32 torch.Size([1, 14])
-observation.effort: torch.float32 torch.Size([1, 14])
-action: torch.float32 torch.Size([1, 14])
-episode_index: torch.int64 torch.Size([1])
-frame_index: torch.int64 torch.Size([1])
-timestamp: torch.float32 torch.Size([1])
-next.done: torch.bool torch.Size([1])
-index: torch.int64 torch.Size([1])
-task_index: torch.int64 torch.Size([1])
-'''
