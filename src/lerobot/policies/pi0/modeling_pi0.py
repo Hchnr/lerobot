@@ -774,7 +774,10 @@ class PI0FlowMatching(nn.Module):
         prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(
             images, img_masks, lang_tokens, lang_masks
         )
+        # prefix_embs: (batch_size, prefix_seq_len, proj_width)
+        # prefix_seq_len = 图像特征总数 + 语言 token 数
         prefix_att_2d_masks = make_att_2d_masks(prefix_pad_masks, prefix_att_masks)
+        # prefix_att_2d_masks: (batch_size, prefix_seq_len, prefix_seq_len)
         prefix_position_ids = torch.cumsum(prefix_pad_masks, dim=1) - 1
         # prefix_position_ids: (batch_size, prefix_seq_len)
 
@@ -819,6 +822,10 @@ class PI0FlowMatching(nn.Module):
     ):
         """Apply one denoising step of the noise `x_t` at a given timestep."""
         suffix_embs, suffix_pad_masks, suffix_att_masks = self.embed_suffix(state, x_t, timestep)
+        # suffix_embs: (batch_size, suffix_seq_len, proj_width
+        # - suffix_seq_len = 1（state）+ n_action_steps（动作）
+        # - proj_width 为 embedding 维度
+        # suffix_pad_masks,suffix_att_masks: (batch_size, suffix_seq_len)
 
         suffix_len = suffix_pad_masks.shape[1]
         batch_size = prefix_pad_masks.shape[0]
@@ -841,7 +848,10 @@ class PI0FlowMatching(nn.Module):
             fill_kv_cache=False,
         )
         suffix_out = outputs_embeds[1]
+        # outputs_embeds[1]: (batch_size, suffix_len, hidden_size)
         suffix_out = suffix_out[:, -self.config.n_action_steps :]
+        # suffix_out: (batch_size, n_action_steps, hidden_size)
         suffix_out = suffix_out.to(dtype=torch.float32)
         v_t = self.action_out_proj(suffix_out)
+        # vt: (batch_size, n_action_steps, max_action_dim)
         return v_t
