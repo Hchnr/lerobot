@@ -774,7 +774,8 @@ class PI0FlowMatching(nn.Module):
         prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(
             images, img_masks, lang_tokens, lang_masks
         )
-        # prefix_embs: (batch_size, prefix_seq_len, proj_width)
+        print(f"in sample_actions(), prefix_embs: {prefix_embs.shape}")
+        # prefix_embs: (batch_size, prefix_seq_len, proj_width) [1, 816, 2048]
         # prefix_seq_len = 图像特征总数 + 语言 token 数
         prefix_att_2d_masks = make_att_2d_masks(prefix_pad_masks, prefix_att_masks)
         # prefix_att_2d_masks: (batch_size, prefix_seq_len, prefix_seq_len)
@@ -810,6 +811,7 @@ class PI0FlowMatching(nn.Module):
             # Euler step
             x_t += dt * v_t
             time += dt
+        import pdb; pdb.set_trace()
         return x_t
 
     def denoise_step(
@@ -821,11 +823,14 @@ class PI0FlowMatching(nn.Module):
         timestep,
     ):
         """Apply one denoising step of the noise `x_t` at a given timestep."""
+        # x_t: (batch_size, n_action_steps, max_action_dim) [1, 50, 32]
+        # past_key_values: dict[18][2] [1, 816, 1, 256]
         suffix_embs, suffix_pad_masks, suffix_att_masks = self.embed_suffix(state, x_t, timestep)
-        # suffix_embs: (batch_size, suffix_seq_len, proj_width
+        # suffix_embs: (batch_size, suffix_seq_len, proj_width) [1, 51, 1024]
         # - suffix_seq_len = 1（state）+ n_action_steps（动作）
         # - proj_width 为 embedding 维度
         # suffix_pad_masks,suffix_att_masks: (batch_size, suffix_seq_len)
+        print(f"denoise_step(), suffix_embs: {suffix_embs.shape}")
 
         suffix_len = suffix_pad_masks.shape[1]
         batch_size = prefix_pad_masks.shape[0]
@@ -848,10 +853,14 @@ class PI0FlowMatching(nn.Module):
             fill_kv_cache=False,
         )
         suffix_out = outputs_embeds[1]
-        # outputs_embeds[1]: (batch_size, suffix_len, hidden_size)
+        print(f"denoise_step(), outputs_embeds[1]: {outputs_embeds[1].shape}")
+        # outputs_embeds[1]: (batch_size, suffix_len, hidden_size) [1, 51, 1024]
         suffix_out = suffix_out[:, -self.config.n_action_steps :]
         # suffix_out: (batch_size, n_action_steps, hidden_size)
         suffix_out = suffix_out.to(dtype=torch.float32)
         v_t = self.action_out_proj(suffix_out)
-        # vt: (batch_size, n_action_steps, max_action_dim)
+        # vt: (batch_size, n_action_steps, max_action_dim) [1, 50, 32]
+        print(f"denoise_step(), v_t: {v_t.shape}")
+
+        import pdb; pdb.set_trace()
         return v_t
