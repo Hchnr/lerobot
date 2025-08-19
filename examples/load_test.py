@@ -1,31 +1,3 @@
-# Copyright 2024 The HuggingFace Inc. team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""
-This script demonstrates the use of `LeRobotDataset` class for handling and processing robotic datasets from Hugging Face.
-It illustrates how to load datasets, manipulate them, and apply transformations suitable for machine learning tasks in PyTorch.
-
-Features included in this script:
-- Viewing a dataset's metadata and exploring its properties.
-- Loading an existing dataset from the hub or a subset of it.
-- Accessing frames by episode number.
-- Using advanced dataset features like timestamp-based frame selection.
-- Demonstrating compatibility with PyTorch DataLoader for batch processing.
-
-The script ends with examples of how to batch process data using PyTorch's DataLoader.
-"""
-
 from pprint import pprint
 
 import torch
@@ -70,15 +42,21 @@ print(ds_meta)
 
 # You can then load the actual dataset from the hub.
 # Either load any subset of episodes:
-dataset = LeRobotDataset(repo_id, episodes=[0, 10, 11, 23])
+dataset = LeRobotDataset(repo_id, episodes=[0, 10])
+
+dataloader = torch.utils.data.DataLoader(dataset,num_workers=0,batch_size=1,shuffle=True,)
+
+for batch in dataloader:
+    print(f"{batch[camera_key].shape=}")  # (32, 4, c, h, w)
+    print(f"{batch['observation.state'].shape=}")  # (32, 6, c)
+    print(f"{batch['action'].shape=}")  # (32, 64, c)
+    import pdb; pdb.set_trace()  # Debugging point to inspect the batch
+    break
+
+import pdb; pdb.set_trace()
 
 # And see how many frames you have:
 print(f"Selected episodes: {dataset.episodes}")
-print(f"Number of episodes selected: {dataset.num_episodes}")
-print(f"Number of frames selected: {dataset.num_frames}")
-
-# Or simply load the entire dataset:
-dataset = LeRobotDataset(repo_id)
 print(f"Number of episodes selected: {dataset.num_episodes}")
 print(f"Number of frames selected: {dataset.num_frames}")
 
@@ -140,4 +118,5 @@ for batch in dataloader:
     print(f"{batch[camera_key].shape=}")  # (32, 4, c, h, w)
     print(f"{batch['observation.state'].shape=}")  # (32, 6, c)
     print(f"{batch['action'].shape=}")  # (32, 64, c)
+    import pdb; pdb.set_trace()  # Debugging point to inspect the batch
     break
