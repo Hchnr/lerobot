@@ -244,7 +244,8 @@ class PI0Policy(PreTrainedPolicy):
             config.output_features, config.normalization_mapping, dataset_stats
         )
 
-        self.language_tokenizer = AutoTokenizer.from_pretrained("google/paligemma-3b-pt-224")
+        # self.language_tokenizer = AutoTokenizer.from_pretrained("google/paligemma-3b-pt-224")
+        self.language_tokenizer = AutoTokenizer.from_pretrained("/share/project/hcr/models/google/paligemma-3b-pt-224")
         self.model = PI0FlowMatching(config)
 
         self.reset()
@@ -756,18 +757,26 @@ class PI0FlowMatching(nn.Module):
 
     def sample_actions(self, images, img_masks, lang_tokens, lang_masks, state, noise=None) -> Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
+        # images: list of Tensors, 每个 Tensor shape: (batch_size, channels, height, width)
+        # img_masks: list of Tensors, 每个 Tensor shape: (batch_size,)
+        # lang_tokens: Tensor, shape: (batch_size, seq_len)
+        # lang_masks: Tensor, shape: (batch_size, seq_len)
+        # state: Tensor, shape: (batch_size, state_dim)
+
         bsize = state.shape[0]
         device = state.device
 
         if noise is None:
             actions_shape = (bsize, self.config.n_action_steps, self.config.max_action_dim)
             noise = self.sample_noise(actions_shape, device)
+            # noise: Tensor, shape: (batch_size, n_action_steps, max_action_dim)（默认 None，会在内部创建）
 
         prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(
             images, img_masks, lang_tokens, lang_masks
         )
         prefix_att_2d_masks = make_att_2d_masks(prefix_pad_masks, prefix_att_masks)
         prefix_position_ids = torch.cumsum(prefix_pad_masks, dim=1) - 1
+        # prefix_position_ids: (batch_size, prefix_seq_len)
 
         # Compute image and language key value cache
         _, past_key_values = self.paligemma_with_expert.forward(
@@ -793,6 +802,7 @@ class PI0FlowMatching(nn.Module):
                 x_t,
                 expanded_time,
             )
+            # v_t,x_t: (batch_size, n_action_steps, max_action_dim)
 
             # Euler step
             x_t += dt * v_t
