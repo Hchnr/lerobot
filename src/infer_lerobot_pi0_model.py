@@ -15,7 +15,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL_PATH = "/share/project/hcr/models/lerobot/pi0"
 DATASET_REPO_ID = "lerobot/aloha_mobile_cabinet"
 DATASET = LeRobotDataset(DATASET_REPO_ID, episodes=[0, 10, 11, 23])
-NUM_INFER = 50
+NUM_INFER = 1
 
 def main():
     dataloader = torch.utils.data.DataLoader(
