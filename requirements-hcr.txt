@@ -100,7 +100,6 @@ multiprocess
 mypy-extensions
 networkx
 nodeenv
-num2words
 numpy
 nvidia-cublas-cu12
 nvidia-cuda-cupti-cu12
