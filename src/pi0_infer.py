@@ -12,9 +12,10 @@ from lerobot.policies.factory import make_policy
 
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_PATH = "/share/project/hcr/models/lerobot/pi0"
+MODEL_PATH = "/models/lerobot/pi0"
 DATASET_REPO_ID = "lerobot/aloha_mobile_cabinet"
-DATASET = LeRobotDataset(DATASET_REPO_ID, episodes=[0, 10, 11, 23])
+TOKENIZER = "/models/google/paligemma-3b-pt-224"
+DATASET = LeRobotDataset(DATASET_REPO_ID, episodes=[0, 10, 11, 23], video_backend="pyav")
 NUM_INFER = 50
 
 def main():
@@ -32,7 +33,9 @@ def main():
 
     cfg = PreTrainedConfig.from_pretrained(MODEL_PATH)
     cfg.pretrained_path = MODEL_PATH
+    cfg.repo_id = TOKENIZER
     policy = make_policy(cfg, ds_meta=DATASET.meta)
+    policy = policy.eval().to(DEVICE)
     # policy = torch.compile(policy, mode="reduce-overhead")
 
     images, img_masks = policy.prepare_images(batch)
@@ -41,7 +44,8 @@ def main():
 
     for _ in range(NUM_INFER):
         t_s = time.time()
-        actions = policy.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, noise=None)
+        with torch.no_grad():
+            actions = policy.model.sample_actions(images, img_masks, lang_tokens, lang_masks, state, noise=None)
         print(f"sample_actions: {(time.time() - t_s)*1000:2f} ms")
         original_action_dim = policy.config.action_feature.shape[0]
         actions = actions[:, :10, :original_action_dim]
